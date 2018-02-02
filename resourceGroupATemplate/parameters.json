@@ -1,0 +1,40 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "redisname": {
+            "value": "redis02"
+        },
+        "vnetname": {
+            "value": "rmVnet01"
+        },
+        "peeringsname": {
+            "value": "peer01"
+        },
+        "addressPrefix": {
+            "value": "10.0.0.0/24"
+        },
+        "subnetName": {
+            "value": "default"
+        },
+        "classicVnetName":{
+            "value": "classicVNet"
+        },
+        "nsgName":{
+            "value": "nsg01"
+        },
+        "sourceAddressPrefixesHttps":{
+            "value": [
+                "000.000.000.000/32",
+                "100.000.000.000/32",
+                "200.000.000.000/32",
+                "300.000.000.000/32",
+                "400.000.000.000/32",
+                "500.000.000.000/32"
+            ]
+        },
+        "SubscriptionID":{
+            "value": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+        }
+    }
+}

@@ -1,0 +1,45 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmName": {
+            "value": "armVm01"
+        },
+        "nicName": {
+            "value": "Vm01nic01"
+        },
+        "ipName": {
+            "value": "Vm01ip01"
+        },
+        "nsgName": {
+            "value": "nsg01"
+        },
+        "storageName": {
+            "value": "armStorage01"
+        },
+        "vmSize": {
+            "value": "Standard_A1"
+        },
+        "storageAccountType": {
+            "value": "Standard_LRS"
+        },
+        "adminUserName": {
+            "value":"adminusr"
+        },
+        "adminPassword": {
+            "value":"adminpw"
+        },
+        "resourceGName": {
+            "value": "resourcea"
+        },
+        "subscriptionID":{
+            "value": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+        },
+        "vNetName":{
+            "value": "rmVnet01"
+        },
+        "subnetName":{
+            "value": "default"
+        }
+    }
+}
