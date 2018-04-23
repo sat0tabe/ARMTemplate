@@ -2,36 +2,99 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "redisname": {
-            "type": "string"
-        },
         "vnetname": {
             "type": "string"
         },
-        "peeringsname": {
+        "addrprefix": {
             "type": "string"
         },
-        "addressPrefix": {
+        "peeringname": {
             "type": "string"
         },
-        "subnetName": {
+        "subscriptionid":{
             "type": "string"
         },
-        "classicVnetName":{
+        "classicvnetname":{
             "type": "string"
         },
-        "nsgName":{
+        "wssubnetname": {
             "type": "string"
         },
-        "sourceAddressPrefixesHttps":{
+        "wssubnetprefix": {
+            "type": "string"
+        },
+        "xmsubnetname": {
+            "type": "string"
+        },
+        "xmsubnetprefix": {
+            "type": "string"
+        },
+        "wsnsgname":{
+            "type": "string"
+        },
+        "srcaddrprefixssl":{
             "type": "array"
         },
-        "SubscriptionID":{
+        "redisname": {
+            "type": "string"
+        },
+        "skuname":{
+            "type": "string"
+        },
+        "skufamily":{
+            "type": "string"
+        },
+        "skucapacity":{
+            "type": "int"
+        },
+        "xmnsgname": {
             "type": "string"
         }
     },
     "variables": {},
     "resources": [
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('vnetname')]",
+            "apiVersion": "2017-06-01",
+            "location": "[resourceGroup().location]",
+            "scale": null,
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('addrprefix')]"
+                    ]
+                },
+                "virtualNetworkPeerings":[
+                    {
+                        "name": "[parameters('peeringname')]",
+                        "properties":{
+                            "allowForwardedTraffic":false,
+                            "allowGatewayTransit":false,
+                            "allowVirtualNetworkAccess":true,
+                            "remoteVirtualNetwork":{
+                                "id": "[concat('/subscriptions/', parameters('subscriptionid'), '/resourceGroups/Default-Networking/providers/Microsoft.ClassicNetwork/virtualNetworks/', parameters('classicvnetname'))]"
+                            },
+                            "useRemoteGateways":false
+                        }
+                    }
+                ],
+                "subnets":[
+                    {
+                        "name": "[parameters('wssubnetname')]",
+                        "properties":{
+                            "addressPrefix": "[parameters('wssubnetprefix')]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('xmsubnetname')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('xmsubnetprefix')]"
+                          }
+                    }
+                ]
+            }
+        },
         {
             "type": "Microsoft.Cache/Redis",
             "name": "[parameters('redisname')]",
@@ -42,9 +105,9 @@
             "properties": {
                 "redisVersion": "3.2.7",
                 "sku": {
-                    "name": "Standard",
-                    "family": "C",
-                    "capacity": 1
+                    "name": "[parameters('skuname')]",
+                    "family": "[parameters('skufamily')]",
+                    "capacity": "[parameters('skucapacity')]"
                 },
                 "enableNonSslPort": true,
                 "redisConfiguration": {
@@ -57,50 +120,8 @@
             "dependsOn": []
         },
         {
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('vnetname')]",
-            "apiVersion": "2017-06-01",
-            "location": "[resourceGroup().location]",
-            "scale": null,
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[parameters('addressPrefix')]"
-                    ]
-                },
-                "subnets": [
-                    {
-                        "name": "[parameters('subnetName')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('addressPrefix')]"
-                        }
-                    }
-                ]
-            },
-            "resources": [
-                {
-                    "apiVersion": "2017-06-01",
-                    "type": "virtualNetworkPeerings",
-                    "name": "[parameters('peeringsname')]",
-                    "location": "[resourceGroup().location]",
-                    "dependsOn": [
-                        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetname'))]"
-                    ],
-                    "properties": {
-                        "allowVirtualNetworkAccess": true,
-                        "allowForwardedTraffic": false,
-                        "allowGatewayTransit": false,
-                        "useRemoteGateways": false,
-                        "remoteVirtualNetwork": {
-                            "id": "[concat('/subscriptions/', parameters('SubscriptionID'), '/resourceGroups/Default-Networking/providers/Microsoft.ClassicNetwork/virtualNetworks/', parameters('classicVnetName'))]"
-                        }
-                    }
-                }
-            ]
-        },
-        {
             "type": "Microsoft.Network/networkSecurityGroups",
-            "name": "[parameters('nsgName')]",
+            "name": "[parameters('wsnsgname')]",
             "apiVersion": "2017-10-01",
             "location": "[resourceGroup().location]",
             "properties": {
@@ -130,7 +151,7 @@
                             "priority": 1010,
                             "direction": "Inbound",
                             "sourceAddressPrefixes":
-                                "[parameters('sourceAddressPrefixesHttps')]"     
+                                "[parameters('srcaddrprefixssl')]"     
                         }
                     }
                 ],
@@ -138,7 +159,6 @@
                     {
                         "name": "AllowVnetInBound",
                         "properties": {
-                            "description": "Allow inbound traffic from all VMs in VNET",
                             "protocol": "*",
                             "sourcePortRange": "*",
                             "destinationPortRange": "*",
@@ -152,7 +172,6 @@
                     {
                         "name": "AllowAzureLoadBalancerInBound",
                         "properties": {
-                            "description": "Allow inbound traffic from azure load balancer",
                             "protocol": "*",
                             "sourcePortRange": "*",
                             "destinationPortRange": "*",
@@ -166,7 +185,6 @@
                     {
                         "name": "DenyAllInBound",
                         "properties": {
-                            "description": "Deny all inbound traffic",
                             "protocol": "*",
                             "sourcePortRange": "*",
                             "destinationPortRange": "*",
@@ -180,7 +198,6 @@
                     {
                         "name": "AllowVnetOutBound",
                         "properties": {
-                            "description": "Allow outbound traffic from all VMs to all VMs in VNET",
                             "protocol": "*",
                             "sourcePortRange": "*",
                             "destinationPortRange": "*",
@@ -194,7 +211,6 @@
                     {
                         "name": "AllowInternetOutBound",
                         "properties": {
-                            "description": "Allow outbound traffic from all VMs to Internet",
                             "protocol": "*",
                             "sourcePortRange": "*",
                             "destinationPortRange": "*",
@@ -208,7 +224,6 @@
                     {
                         "name": "DenyAllOutBound",
                         "properties": {
-                            "description": "Deny all outbound traffic",
                             "protocol": "*",
                             "sourcePortRange": "*",
                             "destinationPortRange": "*",
@@ -220,8 +235,126 @@
                         }
                     }
                 ]
-            },
-            "dependsOn": []
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('xmnsgname')]",
+            "apiVersion": "2017-10-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-rdp",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "Internet",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "HTTPS",
+                        "properties": {
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1010,
+                            "direction": "Inbound",
+                            "destinationPortRanges": [
+                                "80",
+                                "443"
+                            ]
+                        }
+                    }
+                ],
+                "defaultSecurityRules": [
+                    {
+                        "name": "AllowVnetInBound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 65000,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "AllowAzureLoadBalancerInBound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "AzureLoadBalancer",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 65001,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "DenyAllInBound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 65500,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "AllowVnetOutBound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "VirtualNetwork",
+                            "destinationAddressPrefix": "VirtualNetwork",
+                            "access": "Allow",
+                            "priority": 65000,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "AllowInternetOutBound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "Internet",
+                            "access": "Allow",
+                            "priority": 65001,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "DenyAllOutBound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Deny",
+                            "priority": 65500,
+                            "direction": "Outbound"
+                        }
+                    }
+                ]
+            }
         }
     ]
 }
